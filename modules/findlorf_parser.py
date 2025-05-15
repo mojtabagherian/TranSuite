@@ -43,6 +43,10 @@ parser.add_argument('--outname',
                     dest="outname", default=None,
                     help="Prefix for the output files.")
 
+parser.add_argument('--chimeric',
+                    dest="chimeric", default=None,
+                    help="Table indicating chimeric genes in the annotation.")
+
 
 def main():
     args = parser.parse_args()

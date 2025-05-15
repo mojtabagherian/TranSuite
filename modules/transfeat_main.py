@@ -4,18 +4,163 @@ Created on Wed May 15 14:25:00 2019
 @email: e.entizne[at]dundee.ac.uk
 """
 import os
+import sys
 import time
+import json
 import warnings
 
 from lib.findlorf.findlorf_tools import *
 from lib.transfeat.identify_coding_features import *
 from lib.transfeat.identify_non_coding_features import *
 
-from lib.parsing.gtf_object_tools import create_gtf_object
+from lib.parsing.gtf_object_tools import create_gtf_object, find_utr_regions
 from lib.parsing.fasta_parsing_tools import get_fasta_sequences, write_fasta_file
 from lib.report.transfeat_report import generate_transfeat_summary
 
 warnings.filterwarnings("ignore")
+
+
+def calculate_exon_only_distance(start_pos, end_pos, exon_list):
+    """Calculate distance excluding introns between two positions"""
+    if start_pos > end_pos:
+        start_pos, end_pos = end_pos, start_pos
+
+    exon_distance = 0
+    for exon in exon_list:
+        exon_start, exon_end = min(exon), max(exon)
+        # If exon overlaps with the region between start_pos and end_pos
+        if not (exon_end < start_pos or exon_start > end_pos):
+            overlap_start = max(exon_start, start_pos)
+            overlap_end = min(exon_end, end_pos)
+            exon_distance += (overlap_end - overlap_start + 1)
+    
+    return exon_distance
+
+
+def calculate_utr_lengths(gtf_obj):
+    """Calculate 3' UTR lengths for all transcripts"""
+    threeprimeUTR_len_dt = {}
+    
+    for trans_id in gtf_obj.trans_exons_dt.keys():
+        trans_exons = gtf_obj.trans_exons_dt[trans_id]
+        trans_sense = gtf_obj.trans_sense_dt[trans_id]
+        trans_cds = gtf_obj.trans_cds_dt.get(trans_id, [])
+        
+        trans_5utr, trans_3utr, start_codon, stop_codon = find_utr_regions(trans_id, trans_sense, trans_exons, trans_cds)
+        
+        if trans_3utr:
+            utr3_len = sum([max(exon)-min(exon)+1 for exon in trans_3utr])
+            threeprimeUTR_len_dt[trans_id] = utr3_len
+        else:
+            threeprimeUTR_len_dt[trans_id] = 0
+            
+    return threeprimeUTR_len_dt
+
+
+def calculate_splice_junction_distances(gtf_obj):
+    """Calculate DSJ and USJ distances for all transcripts"""
+    dsj_distance_dt = {}
+    usj_distance_dt = {}
+    
+    for trans_id, trans_cds in gtf_obj.trans_cds_dt.items():
+        gene_id = gtf_obj.trans_gene_dt[trans_id]
+        trans_sense = gtf_obj.trans_sense_dt[trans_id]
+        
+        # Default values
+        dsj_distance_dt[trans_id] = "NA"
+        usj_distance_dt[trans_id] = "NA"
+        
+        # Get transcript features
+        trans_exons = gtf_obj.trans_exons_dt[trans_id]
+        
+        # Get start and stop codon positions
+        if not trans_cds:
+            continue
+            
+        flat_cds = [c for cds_pair in trans_cds for c in cds_pair]
+        if trans_sense == '+':
+            trans_start = min(flat_cds)
+            trans_stop = max(flat_cds)
+        else:
+            trans_start = max(flat_cds)
+            trans_stop = min(flat_cds)
+        
+        # Get UTR regions
+        trans_5utr, trans_3utr, start_codon, stop_codon = find_utr_regions(
+            trans_id, trans_sense, trans_exons, trans_cds
+        )
+        
+        # Calculate USJ (UpstreamEJ)
+        try:
+            trans_introns = gtf_obj.trans_introns_dt.get(trans_id, [])
+            
+            if trans_introns:
+                upstream_junctions = []
+                
+                for intron in trans_introns:
+                    junction_pos = intron[1] if trans_sense == '+' else intron[0]
+                    
+                    is_upstream = (trans_sense == '+' and junction_pos < trans_stop) or \
+                                 (trans_sense == '-' and junction_pos > trans_stop)
+                    
+                    if is_upstream:
+                        exon_distance = calculate_exon_only_distance(junction_pos, trans_stop, trans_exons)
+                        upstream_junctions.append((junction_pos, exon_distance))
+                
+                if upstream_junctions:
+                    closest_junction = min(upstream_junctions, key=lambda x: x[1])
+                    usj_distance_dt[trans_id] = closest_junction[1]
+        except Exception as e:
+            print(f"Error calculating UpstreamEJ for {trans_id}: {str(e)}")
+        
+        # Calculate DSJ (DownstreamEJ)
+        try:
+            if trans_3utr and len(trans_3utr) > 1:
+                get_introns = lambda exons: [(ex1[-1]+1, ex2[0]-1) for (ex1, ex2) in zip(exons[:-1], exons[1:])]
+                introns_3utr = get_introns(trans_3utr)
+                
+                if introns_3utr:
+                    downstream_junctions = []
+                    
+                    for intron in introns_3utr:
+                        junction_pos = intron[0] if trans_sense == '+' else intron[1]
+                        exon_distance = calculate_exon_only_distance(junction_pos, trans_stop, trans_exons)
+                        downstream_junctions.append((junction_pos, exon_distance))
+                    
+                    if downstream_junctions:
+                        farthest_junction = max(downstream_junctions, key=lambda x: x[1])
+                        dsj_distance = farthest_junction[1]
+                        
+                        if isinstance(dsj_distance, (int, float)):
+                            dsj_distance -= 1
+                        
+                        dsj_distance_dt[trans_id] = dsj_distance
+        except Exception as e:
+            print(f"Error calculating DownstreamEJ for {trans_id}: {str(e)}")
+            
+    return dsj_distance_dt, usj_distance_dt
+
+
+def write_splice_junction_data(gtf_obj, dsj_distance_dt, usj_distance_dt, threeprimeUTR_len_dt, outfolder, outname):
+    """Write splice junction data to CSV file"""
+    splice_junctions_file = os.path.join(outfolder, f"{outname}_splice_junctions.csv")
+    with open(splice_junctions_file, "w+") as fh:
+        fh.write("T_ID,Strand,UpstreamEJ,DownstreamEJ,3UTRlength,PTC_dEJ\n")
+        for trans_id in sorted(gtf_obj.trans_exons_dt.keys()):
+            strand = gtf_obj.trans_sense_dt[trans_id]
+            upstream_ej = usj_distance_dt.get(trans_id, "NA")
+            downstream_ej = dsj_distance_dt.get(trans_id, "NA")
+            utr3_length = threeprimeUTR_len_dt.get(trans_id, 0)
+            
+            PTC_dEJ = "No"
+            if downstream_ej != "NA":
+                try:
+                    if int(downstream_ej) >= 50:
+                        PTC_dEJ = "Yes"
+                except (ValueError, TypeError):
+                    pass
+            
+            fh.write(f"{trans_id},{strand},{upstream_ej},{downstream_ej},{utr3_length},{PTC_dEJ}\n")
 
 
 def transfeat_main(gtf, fasta, outpath, outname, pep_len=50, ptc_len=70, uorf_len=10, sj_dist=50, utr3_len=350,
@@ -106,10 +251,6 @@ def transfeat_main(gtf, fasta, outpath, outname, pep_len=50, ptc_len=70, uorf_le
     # Identify AS in UTR and NAGNAG features
     as_in_utr_dt, as_utr_location_dt, nagnag_dt = identify_similar_coding_features(gtf_obj)
 
-    # Some transcripts are missing from the features_dict either because:
-    # (1) Not present in the FASTA file, (2) it doesn't have a CDS, or (3) it's the only transcript in the overlap group
-    # To avoid KeyError further downstream in 'generate_feature_tag'. These dictionaries return None by default
-
     # Dictionary of features to annotate
     feature_dicts = {}
     feature_dicts["Auto"] = gtf_obj.trans_gene_dt
@@ -143,6 +284,13 @@ def transfeat_main(gtf, fasta, outpath, outname, pep_len=50, ptc_len=70, uorf_le
     # Write TransFeat table output
     transfeat_table = write_transfeat_table(gtf_obj, table_info_dicts, pep_seq_dt, outfolder, outname,
                                             ldorf_ids=ldorf_trans, uorf_ids=uorf_trans, pep_len=pep_len)
+
+    # Calculate UTR lengths and splice junction distances
+    threeprimeUTR_len_dt = calculate_utr_lengths(gtf_obj)
+    dsj_distance_dt, usj_distance_dt = calculate_splice_junction_distances(gtf_obj)
+    
+    # Write splice junction data
+    write_splice_junction_data(gtf_obj, dsj_distance_dt, usj_distance_dt, threeprimeUTR_len_dt, outfolder, outname)
 
     # Write GENERAL/TOTAL output fasta files
     fasta_outfile = os.path.join(outfolder, outname)
