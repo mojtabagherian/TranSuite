@@ -11,7 +11,6 @@ content/10.1101/2020.12.15.422989v1)
 
 Original TranSuite repository: https://github.com/anonconda/TranSuite
 
-TranSuite v2.0 repository: https://github.com/mojtabagherian/TranSuite-v2.0
 ----------------------------
 ## TranSuite v2.0
 ----------------------------
