@@ -3,7 +3,6 @@ Created on Wed May 15 14:25:00 2019
 @author: Juan C Entizne
 @email: e.entizne[at]dundee.ac.uk
 """
-
 import os
 import sys
 import time
