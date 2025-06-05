@@ -27,7 +27,7 @@ Overview of Features
 This modified TranSuite builds upon the original TranSuite software with the following changes:
 
 ### Bug Fixes
-- **Chimeric Gene Handling**: Fixed an issue with the `--chimeric` parameter encountered when using the Araport 11 gtf file handling across Findlorf and Transfeat modules. The parameter is now consistently handled with a default value of `None`, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
+- **Chimeric Gene Handling**: Fixed an issue with the `--chimeric` parameter encountered when using the Araport 11 gtf file handling across FindLorf and TransFeat modules. The parameter is now consistently handled with a default value of `None`, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
 
 ## Modified Splice Junction Analysis
 Precise measurements of splice junction distances are essential for understanding nonsense-mediated decay (NMD) mechanisms and transcript regulation. These calculations measure exonic distances between stop codons and splice junctions to predict the fate of transcripts.
