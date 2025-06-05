@@ -13,7 +13,6 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from modules.transfeat_main import transfeat_main
 from lib.tools.input_tools import check_input
 
-
 description = \
     "Description:\n" + \
     "TransFeat infer coding-related characteristics from the annotate transcript features.\n"
