@@ -8,11 +8,9 @@ import sys
 import time
 import json
 import warnings
-
 from lib.findlorf.findlorf_tools import *
 from lib.transfeat.identify_coding_features import *
 from lib.transfeat.identify_non_coding_features import *
-
 from lib.parsing.gtf_object_tools import create_gtf_object, find_utr_regions
 from lib.parsing.fasta_parsing_tools import get_fasta_sequences, write_fasta_file
 from lib.report.transfeat_report import generate_transfeat_summary
