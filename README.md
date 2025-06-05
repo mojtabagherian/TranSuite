@@ -12,25 +12,25 @@ content/10.1101/2020.12.15.422989v1)
 Original TranSuite repository: https://github.com/anonconda/TranSuite
 
 ----------------------------
-## TranSuite v2.0
+## Modified TranSuite
 ----------------------------
-An enhanced version of TranSuite with additional features for comprehensive transcript analysis.
+A modified version of TranSuite with additional features for comprehensive transcript analysis.
 
 
-Enhanced by:
+Modified by:
 - Mojtaba Bagherian
-- James PB Lloyd
+- James Lloyd
 
 ----------------------------
 Overview of Features
 ----------------------------
-TranSuite v2.0 builds upon the original TranSuite software with the following enhancements:
+This modified TranSuite builds upon the original TranSuite software with the following changes:
 
 ### Bug Fixes
-- **Chimeric Gene Handling**: Fixed an issue with the `--chimeric` parameter handling across all modules. The parameter is now consistently handled with a default value of `None`, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
+- **Chimeric Gene Handling**: Fixed an issue with the `--chimeric` parameter encountered when using the Araport 11 gtf file handling across Findlorf and Transfeat modules. The parameter is now consistently handled with a default value of `None`, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
 
-## Enhanced Splice Junction Analysis
-TranSuite v2.0 introduces precise splice junction distance measurements essential for understanding nonsense-mediated decay (NMD) mechanisms and transcript regulation. These calculations measure exonic distances between stop codons and splice junctions to predict transcript fate.
+## Modified Splice Junction Analysis
+Precise measurements of splice junction distances are essential for understanding nonsense-mediated decay (NMD) mechanisms and transcript regulation. These calculations measure exonic distances between stop codons and splice junctions to predict the fate of transcripts.
 
 ### Core Functions
 
@@ -62,12 +62,12 @@ The PTC_dEJ column provides binary NMD classification (Yes/No for ≥50nt thresh
 ### Biological Impact
 These measurements enable:
 
-- Accurate NMD prediction based on established 50-nucleotide rule
+- Accurate NMD prediction based on the established 50-nucleotide rule
 - Alternative splicing impact assessment on transcript stability
 - Transcript quality evaluation for identifying aberrant isoforms
 - Post-transcriptional regulation studies with quantitative metrics
 
-The enhanced splice junction analysis makes TranSuite v2.0 a comprehensive tool for understanding how transcript structure influences gene expression regulation through NMD and related quality control mechanisms.
+The modified splice junction analysis makes TranSuite a comprehensive tool for understanding how transcript structure influences gene expression regulation through NMD and related quality control mechanisms.
 
 
 ----------------------------
@@ -90,36 +90,21 @@ The enhanced splice junction analysis makes TranSuite v2.0 a comprehensive tool 
    * [Auto](#auto)
       * [Command and options](#command-and-options-3)
       * [Output files](#output-files-3)
-   * [Future work](#future-work)
-   * [License](#license)
    * [Contact](#contact)
+   * [Citation](#citation)
+   * [License](#license)
 
 
 ----------------------------
 # Overview
 ----------------------------
 
-TranSuite is a software for identifying coding sequences of transcripts, selecting translation start sites at gene-level, generating accurate translations of transcript isoforms, and identifying and characterizing multiple coding related features, such as: coding potential, similar-translation features, and multiple NMD-related signals. TranSuite consists of three independent modules, FindLORF, TransFix and TransFeat (Fig. 1). Each module can be run independently or as a [pipeline with a single command](#auto).
+TranSuite is a software for identifying coding sequences of transcripts, selecting translation start sites at gene-level, generating accurate translations of transcript isoforms, and identifying and characterizing multiple coding related features, such as: coding potential, similar-translation features, and multiple NMD-related signals. TranSuite consists of three independent modules, FindLORF, TransFix and TransFeat. Each module can be run independently or as a [pipeline with a single command](#auto).
 
 - FindLORFS - finds and annotates the longest ORF of each transcript
-- TransFix - "fixes" the same translation start codon AUG in all the transcripts in a gene and re-annotates the resulting ORF of the transcripts (Fig. 2)
-- TransFeat - identifies structural features of transcripts, coding potential and NMD signals (Fig. 3)
-- Auto - executes the whole pipeline (FindLORFS, TransFix, and TransFeat) in tandem (Fig. 1)
-
-
-![Fig1_TS_pipeline.jpg](https://drive.google.com/uc?id=1V6AEorw85_VGCne6Na9uSaWUWeg-a0Y8)
-
-**Fig 1.**  TranSuite pipeline. The TranSuite pipeline takes A) the transcript annotations to be analysed (in GTF format) and B) the transcript sequence (FASTA file) as inputs. 1) FindLORF - For each transcript the longest ORF is identified and genomic co-ordinates generated. 2) TransFix – all transcripts of a gene are translated with the fixed translation start AUG. 3) TransFeat – transcript features are derived and transcripts classified. Information on genes and transcripts is contained in a TranSuite-generated report and tables.
-
-
-![Fig3_TransFix_example.jpg](https://drive.google.com/uc?id=1ZP22Olbg_Zr4fLPkhWRKA-YlphDMQvSh)
-
-**Fig 2.** TransFix correctly translates and annotates ORFs in transcript variants. A) Schematic of gene with a fully spliced (FS) transcript that encodes the full-length protein and an alternatively spliced (AS) transcript where the AS changes the frame of translation and introduces a PTC (TransFix). B) Common mis-annotation of the AS transcript due to selection of the longest ORF by translation programs. This selects an AUG downstream of the PTC (ignoring the authentic translation start site) producing a long downstream ORF (ldORF) which represents a C-terminal fragment of the protein of the gene (top). Where an AUG in one of the other two reading frames occurs in frame and upstream of the ldORF, the ORF is extended (grey boxes). The ORF contains a C-terminal fragment of the protein of the gene and an unrelated N-terminal fragment. White boxes – protein-coding exons; black boxes – UTRs; grey boxes – coding exons with sequence from different frame; arrow – position of authentic translation start AUG.
-
-
-![Fig2_TransFeat_workflow.jpg](https://drive.google.com/uc?id=1_Lasc18vsbYccNHJ8pG6xXCf7-DMVfxM)
-
-**Fig 3.** Transcript feature characterisation by TransFeat. A) translation data identifies transcripts with non-coding features (no CDS - no AUG; CDS < 30 amino acids or short ORF where CDS is between 30-100 amino acids (default values); Genes with only no CDS transcripts are classed as Non-coding genes; B) All other genes and their associated transcripts are protein-coding genes. Transcripts containing a PTC (PTC+) are unproductive and all other transcripts are protein coding isoforms. Transcripts of some genes code for identical proteins if AS occurs only in the 5' and/or 3'UTRs. Transcripts with NAGNAG alternative splicing code for proteins which differ by one amino acid. Other protein-coding transcripts encode protein variants. C) PTC+ transcripts are further characterised by different features: downstream splice junction, long 3'UTR and overlapping uORF (NMD signals), in frame and out of frame uORFs, long downstream ORFs. The dotted line from in/out of frame uORFs reflects the potential of some uORFs to trigger NMD.
+- TransFix - "fixes" the same translation start codon AUG in all the transcripts in a gene and re-annotates the resulting ORF of the transcripts
+- TransFeat - identifies structural features of transcripts, coding potential and NMD signals
+- Auto - executes the whole pipeline (FindLORFS, TransFix, and TransFeat) in tandem
 
 
 ----------------------------
@@ -275,7 +260,7 @@ TransFix generates the following output files:
 ==============
 -------------------
 
-TransFeat extracts and processes the transcripts CDS information contained in transcriptome annotations to infer multiple characteristics of the genes, transcripts and their coding potential (Fig. 2), and it to reports theis information in an easily accessible format.
+TransFeat extracts and processes the transcripts CDS information contained in transcriptome annotations to infer multiple characteristics of the genes, transcripts and their coding potential, and it to reports theis information in an easily accessible format.
 
 ### **Command and options** ###
 Command to run TransFeat:
@@ -357,23 +342,10 @@ The main output files of TranSuite pipeline are:
 
 
 ----------------------------
-# Future work
-----------------------------
-
-TODO:
-- Create PyPI / Anaconda installer
-- Allow user to modify the minimum length to identify uORF, and Long 3'UTR (Current values: 10 AA and 350 nt respectively)
-- Allow user to modify the minimum "nucleotide distance from last Splice-Junction" for the identification of the DSSJ NMD-signal (default 50 nt)
-- Tidy up and make available *in-house* scripts to identify overlapping gene IDs in the annotation (This script could be useful to generate tables of potentially chimeric gene IDs)
-- Add a more detailed description of TransFeat output table into the README
-- Create a Web-Tool interface for TranSuite in [Galaxy](https://usegalaxy.org/)
-- Allow the use of alternate codon tables
-
-----------------------------
 # Contact
 ----------------------------
 
-For questions about the enhanced features, please contact: mojtaba.bagherian@uwa.edu.au
+For questions about the modified features, please contact: mojtaba.bagherian@uwa.edu.au
 
 For questions about the original TranSuite, please contact: e.entizne@dundee.ac.uk
 
@@ -381,12 +353,12 @@ For questions about the original TranSuite, please contact: e.entizne@dundee.ac.
 Citation
 ----------------------------
 
-When using TranSuite v2, please cite both:
+When using this TranSuite version, please cite both:
 
 The original TranSuite paper
-This extended version
+This modified version
 
 ----------------------------
 # License
 ----------------------------
-TranSuite v2 is released under the same [MIT license](https://opensource.org/licenses/MIT) as the original TranSuite.
+This TranSuite version is released under the same [MIT license](https://opensource.org/licenses/MIT) as the original TranSuite.
