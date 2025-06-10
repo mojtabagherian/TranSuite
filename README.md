@@ -26,7 +26,7 @@ Overview of Features
 ----------------------------
 This modified TranSuite builds upon the original TranSuite software with the following changes:
 
-### workaround
+### Workaround
 - **Chimeric Gene Handling**: Encountered error when using the Araport11 GTF as input file regarding the --chimeric parameter encountered across FindLorf and TransFeat modules. The parameter is now consistently handled with a default value of None, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
 
 ## Modified Splice Junction Analysis
