@@ -18,19 +18,19 @@ A modified version of TranSuite with additional features for comprehensive trans
 
 
 Modified by:
-- Mojtaba Bagherian
-- James Lloyd
+- Mojtaba Bagherian, The University of Western Australia
+- James Lloyd, The University of Western Australia
 
 ----------------------------
 Overview of Features
 ----------------------------
 This modified TranSuite builds upon the original TranSuite software with the following changes:
 
-### Bug Fixes
-- **Chimeric Gene Handling**: Fixed an issue with the `--chimeric` parameter encountered when using the Araport 11 gtf file handling across FindLorf and TransFeat modules. The parameter is now consistently handled with a default value of `None`, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
+### workaround
+- **Chimeric Gene Handling**: Encountered error when using the Araport11 GTF as input file regarding the --chimeric parameter encountered across FindLorf and TransFeat modules. The parameter is now consistently handled with a default value of None, preventing AttributeError exceptions when the parameter is not provided. This ensures more robust processing of chimeric genes across all TranSuite modules.
 
 ## Modified Splice Junction Analysis
-Precise measurements of splice junction distances are essential for understanding nonsense-mediated decay (NMD) mechanisms and transcript regulation. These calculations measure exonic distances between stop codons and splice junctions to predict the fate of transcripts.
+Precise measurements of splice junction distances and 3' UTR lengths are useful in studying nonsense-mediated mRNA decay (NMD). These calculations measure exonic distances between stop codons and splice junctions to aid in the prediction of transcript fate.
 
 ### Core Functions
 
@@ -38,10 +38,13 @@ Precise measurements of splice junction distances are essential for understandin
 Calculates the precise distance between genomic positions along the mature transcript, excluding intronic sequences. This biological accuracy is critical for NMD analysis, where distances are measured on processed mRNA.
 
 #### 2. Upstream Splice Junction Distance (UpstreamEJ)
-Measures the exonic distance from the nearest upstream exon-exon junction to the stop codon. Identifies the closest splice junction before the stop codon and calculates the distance along the mature transcript. This measurement is important for understanding exon junction complex (EJC) positioning and its regulatory effects.
+Measures the exonic distance from the nearest upstream exon-exon junction to the stop codon. Identifies the closest splice junction before the stop codon and calculates the distance along the mature transcript. This measurement is important for understanding exon junction complex (EJC) positioning and its regulatory effects in mammals.
 
 #### 3. Downstream Splice Junction Distance (DownstreamEJ)
-Calculates the exonic distance from the stop codon to the farthest downstream junction in the 3' UTR. This is the primary NMD determinant - transcripts with stop codons >50 nucleotides upstream of a downstream exon junction are typically NMD substrates. The measurement focuses on the most distant junction for conservative NMD prediction.
+Calculates the exonic distance from the stop codon to the farthest downstream junction in the 3' UTR. This is the primary NMD determinant - transcripts with stop codons >50 nucleotides upstream of a downstream exon junction are typically NMD substrates in mammals. The measurement focuses on the most distant junction for conservative NMD prediction.
+
+#### 4. 3' UTR Length Calculation
+Measures the total length of the 3' untranslated region by summing all exonic sequences downstream of the stop codon. This measurement is crucial for understanding transcript regulation, as 3' UTR length affects mRNA stability, localization, and translation efficiency. Long 3' UTRs often contain regulatory elements and can influence NMD susceptibility when combined with other features.
 
 ### Technical Implementation
 The modular design includes:
